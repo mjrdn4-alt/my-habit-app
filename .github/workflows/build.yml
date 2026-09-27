@@ -8,19 +8,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Unzip project files
-        run: |
-          unzip -o *.zip
-          if [ ! -f "pubspec.yaml" ]; then
-            mv */* . 2>/dev/null || true
-          fi
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: Get dependencies
+      - name: Extract zip archive
+        run: |
+          unzip -o *.zip
+          # If extracted into a folder like Hello-World, move contents to root
+          if [ ! -f "pubspec.yaml" ]; then
+            SUBDIR=$(find . -maxdepth 2 -name "pubspec.yaml" -exec dirname {} \;)
+            if [ -n "$SUBDIR" ] && [ "$SUBDIR" != "." ]; then
+              cp -r $SUBDIR/* .
+            fi
+          fi
+          ls -la
+
+      - name: Install dependencies
         run: flutter pub get
 
       - name: Build Android APK
